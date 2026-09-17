@@ -12,6 +12,7 @@ platform from [Migen][] is used as baseline and extended as necessary.
 ### Cores
 
 - [x] wrapper for PS7
+- [ ] wrapper for PS8
 
 ### Interconnect
 
