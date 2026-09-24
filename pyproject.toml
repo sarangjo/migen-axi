@@ -41,3 +41,9 @@ repository = "https://github.com/peteut/migen-axi.git"
 [tool.setuptools_scm]
 write_to= "src/migen_axi/_version.py"
 
+[tool.pyright]
+reportAttributeAccessIssue = false
+reportOperatorIssue = false
+reportCallIssue = false
+reportArgumentType = false
+reportWildcardImportFromLibrary = false

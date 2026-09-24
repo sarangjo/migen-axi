@@ -17,13 +17,6 @@ most fabric-facing designs actually use:
 * the EMIO peripherals: GPIO, I2C0/1, CAN0/1, UART0/1, SPI0/1, SDIO0/1,
   TTC0-3, WDT0/1, and the 4 gigabit Ethernet (GEM) MACs
 * PL clocks, the coarse PL<->PS interrupt buses, and the WFE/WFI event pins
-
-Deliberately NOT modeled (raise an issue/PR if you need one of these):
-DisplayPort, the cache-coherent ACE/CCI port, PCIe/SATA/USB3 GT
-transceivers, dedicated JTAG/boot-mode/calibration pins, the PL-side
-ADMA/GDMA FIFO interfaces, RPU-specific event/interrupt pins, and STM trace.
-Per-core GIC interrupt injection and the SGMII/offload FIFO side of the GEMs
-are also left as raw, unconnected primitive ports.
 """
 from types import SimpleNamespace
 from toolz.curried import *  # noqa
@@ -76,16 +69,20 @@ def connect_interface(interface, ps_m=True):
 
 # unlike PS7's AXI3-derived GP/HP/ACP ports, PS8's are full AXI4 and have no
 # per-beat write ID (WID) pin, so drop the "id" field of the (shared)
-# Interface class's write-data channel before connecting.
-_not_wid = complement(flip(str.endswith, "WID"))
+# Interface class's write-data channel before connecting. Filtering by key
+# name suffix would also catch AWID (e.g. "RECAWID".endswith("WID")), which
+# is a real AXI4 field and must stay connected -- so filter by identity of
+# the underlying signal instead.
+def _drop_wid(interface, mapping):
+    return {k: v for k, v in mapping.items() if v is not interface.w.id}
 
 
 def connect_s_axi(interface):
-    return keyfilter(_not_wid, connect_interface(interface, False))
+    return _drop_wid(interface, connect_interface(interface, False))
 
 
 def connect_m_axi(interface):
-    return keyfilter(_not_wid, connect_interface(interface, True))
+    return _drop_wid(interface, connect_interface(interface, True))
 
 
 # unlike PS7's S/M_AXI_GP ports, PS8's AR/AWSIZE pins are full AXI4 width
@@ -345,30 +342,35 @@ class PS8(Module):
         pads.ps = pads.ps or ps_rec()
         pads.ddr = pads.ddr or ddr_rec()
 
-        # 3 master GP AXI ports: M_AXI_HPM0_FPD, M_AXI_HPM1_FPD,
-        # M_AXI_HPM0_LPD (all electrically identical on the raw primitive).
-        self.m_axi_gp0 = Interface(
-            data_width=128, addr_width=40, id_width=16, name="m_axi_gp0")
-        self.m_axi_gp1 = Interface(
-            data_width=128, addr_width=40, id_width=16, name="m_axi_gp1")
-        self.m_axi_gp2 = Interface(
-            data_width=128, addr_width=40, id_width=16, name="m_axi_gp2")
-        self.m_axi_gp0_user = gp_m_user_rec(name="m_axi_gp0")
-        self.m_axi_gp1_user = gp_m_user_rec(name="m_axi_gp1")
-        self.m_axi_gp2_user = gp_m_user_rec(name="m_axi_gp2")
+        # 3 master GP AXI ports, named after the raw PS8 primitive's own
+        # MAXIGP0/1/2 pins: same convention as ps7.py's m_axi_gp0/gp1.
+        # The public (UG1085) names for these pins are:
+        # - gp0 --> HPM0_FPD
+        # - gp1 --> HPM1_FPD
+        # - gp2 --> HPM0_LPD
+        for i in range(3):
+            name = "m_axi_gp{}".format(i)
+            setattr(self, name, Interface(
+                data_width=128, addr_width=40, id_width=16, name=name))
+            setattr(self, name + "_user", gp_m_user_rec(name=name))
 
-        # 7 slave GP AXI ports: conventionally S_AXI_LPD (gp0), S_AXI_HPC0/1
-        # (gp1/gp2) and S_AXI_HP0-3 (gp3-6); again all identical here.
+        # 7 slave GP AXI ports, named after the raw SAXIGP0-6 pins. The public (UG1085)
+        # names for these pins are:
+        # - gp0/1 = S_AXI_HPC0_FPD/HPC1_FPD (cache-coherent, via the CCI)
+        # - gp2-5 = S_AXI_HP0-3_FPD (high-performance, non-coherent)
+        # - gp6 = S_AXI_PL_LPD (routed through the Low Power Domain switch)
         for i in range(7):
             name = "s_axi_gp{}".format(i)
             setattr(self, name, Interface(
                 data_width=128, addr_width=49, id_width=6, name=name))
             setattr(self, name + "_user", gp_s_user_rec(name=name))
 
+        # ACP AXI slave port
         self.s_axi_acp = Interface(
             data_width=128, addr_width=40, id_width=5, name="s_axi_acp")
         self.s_axi_acp_user = acp_user_rec(name="s_axi_acp")
 
+        # All peripherals
         self.ttc0 = ttc_rec(name="ttc0")
         self.ttc1 = ttc_rec(name="ttc1")
         self.ttc2 = ttc_rec(name="ttc2")
