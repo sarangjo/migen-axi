@@ -190,6 +190,6 @@ class SoCCoreZynqMP(SoCCoreBase):
 
     def create_ps(self, platform, ps_cd_sys):
         return ps8.PS8(SimpleNamespace(
-            ps=platform.request("ps"),
-            ddr=platform.request("ddr"),
+            ps=None,
+            ddr=None,
         ), ps_cd_sys=ps_cd_sys)

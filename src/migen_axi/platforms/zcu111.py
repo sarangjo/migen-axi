@@ -81,9 +81,56 @@ _io = [
      Subsignal("odt",      Pins("AV32 AP31"),     IOStandard("SSTL12")),
      Subsignal("parity",   Pins("AN31"),          IOStandard("POD12")),
      Subsignal("ram_rst_n", Pins("AM33"),         IOStandard("LVCMOS12"))),
+
+    # 125MHz clock
+    ("clk125", 0,
+     Subsignal("p", Pins("AL17"), IOStandard("LVDS")),
+     Subsignal("n", Pins("AM17"), IOStandard("LVDS"))),
 ]
 
-_connectors = []
+_connectors = [
+    # FMCP HPC0 connector (J22).  Pin names follow the VITA 57.1 FMC standard;
+    # ball assignments taken from ZCU111_Rev1.0.xdc (rdf0466).
+    # Banks 65 (LA00-15) and 66 (LA16-33, CLK0/1_M2C).
+    ("HPC0", {
+        "CLK0_M2C_P": "AN10", "CLK0_M2C_N": "AP10",
+        "CLK1_M2C_P": "AP20", "CLK1_M2C_N": "AP19",
+        "LA00_CC_P": "AP9",  "LA00_CC_N": "AR9",
+        "LA01_CC_P": "AP8",  "LA01_CC_N": "AR8",
+        "LA02_P": "AH13",    "LA02_N": "AJ13",
+        "LA03_P": "AJ12",    "LA03_N": "AK12",
+        "LA04_P": "AG12",    "LA04_N": "AH12",
+        "LA05_P": "AM8",     "LA05_N": "AM7",
+        "LA06_P": "AL8",     "LA06_N": "AL7",
+        "LA07_P": "AK13",    "LA07_N": "AL12",
+        "LA08_P": "AL9",     "LA08_N": "AM9",
+        "LA09_P": "AN8",     "LA09_N": "AN7",
+        "LA10_P": "AM12",    "LA10_N": "AN12",
+        "LA11_P": "AT10",    "LA11_N": "AU10",
+        "LA12_P": "AL10",    "LA12_N": "AM10",
+        "LA13_P": "AM13",    "LA13_N": "AN13",
+        "LA14_P": "AL14",    "LA14_N": "AM14",
+        "LA15_P": "AJ14",    "LA15_N": "AK14",
+        "LA16_P": "AR12",    "LA16_N": "AR11",
+        "LA17_CC_P": "AN21", "LA17_CC_N": "AP21",
+        "LA18_CC_P": "AM20", "LA18_CC_N": "AN20",
+        "LA19_P": "AU20",    "LA19_N": "AU19",
+        "LA20_P": "AR17",    "LA20_N": "AT17",
+        "LA21_P": "AL19",    "LA21_N": "AM19",
+        "LA22_P": "AR19",    "LA22_N": "AT19",
+        "LA23_P": "AM18",    "LA23_N": "AN18",
+        "LA24_P": "AL22",    "LA24_N": "AM22",
+        "LA25_P": "AL21",    "LA25_N": "AL20",
+        "LA26_P": "AR22",    "LA26_N": "AT22",
+        "LA27_P": "AR21",    "LA27_N": "AT21",
+        "LA28_P": "AJ18",    "LA28_N": "AK18",
+        "LA29_P": "AK22",    "LA29_N": "AK21",
+        "LA30_P": "AG20",    "LA30_N": "AH20",
+        "LA31_P": "AJ20",    "LA31_N": "AJ19",
+        "LA32_P": "AF20",    "LA32_N": "AF19",
+        "LA33_P": "AG18",    "LA33_N": "AH18",
+    }),
+]
 
 
 class Platform(XilinxPlatform):

@@ -278,10 +278,6 @@ event_rec = partial(Record, [
     ("standbywfi", 4, DIR_M_TO_S),
 ])
 
-bibuf = comp(
-    apply_map(partial(Instance, "BIBUF")),
-    dict, partial(zip, ["io_PAD", "io_IO"]))
-
 bufg = comp(
     apply_map(partial(Instance, "BUFG")),
     dict, partial(zip, ["i_I", "o_O"]))
@@ -370,7 +366,6 @@ class PS8(Module):
             data_width=128, addr_width=40, id_width=5, name="s_axi_acp")
         self.s_axi_acp_user = acp_user_rec(name="s_axi_acp")
 
-        # All peripherals
         self.ttc0 = ttc_rec(name="ttc0")
         self.ttc1 = ttc_rec(name="ttc1")
         self.ttc2 = ttc_rec(name="ttc2")
@@ -404,8 +399,6 @@ class PS8(Module):
         self.irq_p2f_fpd = Signal(64)
         self.irq_p2f_lpd = Signal(100)
 
-        self.fclk = fclk_rec(name="fclk")
-
         ###
 
         m_axi_gp_global = [
@@ -425,26 +418,7 @@ class PS8(Module):
         for i, enet in enumerate(enets):
             setattr(self.submodules, "enet{}".format(i), enet)
 
-        ddr_buf, ps_buf = ddr_rec(name="ddr"), ps_rec(name="ps")
-        mio_buf = Signal(len(self.mio))
-
-        pads_ddr_v = Signal(len(pads.ddr))
-        # bibuf each pad bit straight into the matching bit of ddr_buf's own
-        # (named) fields -- those are what actually gets wired to the PS8
-        # instance below, so an intermediate ddr_buf_v would just be a
-        # same-width signal that's never connected to anything.
-        ddr_buf_v = ddr_buf.raw_bits()
-        self.comb += [
-            pads_ddr_v.eq(pads.ddr.raw_bits()),
-        ]
-        self.specials += [bibuf([pads_ddr_v[i], ddr_buf_v[i]])
-                          for i in range(len(pads_ddr_v))]
-        self.specials += [
-            bibuf([pads.ps.clk, ps_buf.clk]),
-            bibuf([pads.ps.por_b, ps_buf.por_b]),
-            bibuf([pads.ps.srst_b, ps_buf.srst_b])]
-        self.specials += [bibuf([self.mio[i], mio_buf[i]])
-                          for i in range(len(self.mio))]
+        self.fclk = fclk_rec(name="fclk")
 
         if ps_cd_sys:
             # PS8 has no dedicated per-PLCLK reset output to synchronize
@@ -474,8 +448,11 @@ class PS8(Module):
             connect_interface(s_axi_acp_global),
             connect_interface(self.s_axi_acp_user),
             connect_s_axi(self.s_axi_acp),
-            connect_interface(ddr_buf),
-            dict(io_PSS_ALTO_CORE_PAD_MIO=mio_buf),
+            # PS8 DDR pad ports (PSS_ALTO_CORE_PAD_DRAM*) are PS-dedicated pads
+            # that Vivado manages internally.  Do NOT connect them to any PL
+            # signal (platform.request("ddr") or otherwise): the router cannot
+            # reach PS8's PS-side pad cells through PL fabric routing.
+            dict(io_PSS_ALTO_CORE_PAD_MIO=self.mio),
             connect_interface(self.ttc0),
             connect_interface(self.ttc1),
             connect_interface(self.ttc2),
@@ -522,9 +499,9 @@ class PS8(Module):
                 o_PSPLIRQLPD=self.irq_p2f_lpd,
             ),
             dict(o_PLCLK=self.fclk.clk),
-            dict(io_PSS_ALTO_CORE_PAD_CLK=ps_buf.clk,
-                 io_PSS_ALTO_CORE_PAD_PORB=ps_buf.por_b,
-                 io_PSS_ALTO_CORE_PAD_SRSTB=ps_buf.srst_b),
+            dict(io_PSS_ALTO_CORE_PAD_CLK=pads.ps.clk,
+                 io_PSS_ALTO_CORE_PAD_PORB=pads.ps.por_b,
+                 io_PSS_ALTO_CORE_PAD_SRSTB=pads.ps.srst_b),
         ],
             R.apply(merge),
             keymap(str_replace("TTC", "EMIOTTC")),
