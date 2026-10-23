@@ -26,6 +26,36 @@ _io = [
     ("user_btn", 3, Pins("AW6"),  IOStandard("LVCMOS18")),  # W
     ("user_btn", 4, Pins("AW5"),  IOStandard("LVCMOS18")),  # C
 
+    # 8-position DIP switch
+    ("dip_sw", 0, Pins("AF16"), IOStandard("LVCMOS18")),
+    ("dip_sw", 1, Pins("AF17"), IOStandard("LVCMOS18")),
+    ("dip_sw", 2, Pins("AH15"), IOStandard("LVCMOS18")),
+    ("dip_sw", 3, Pins("AH16"), IOStandard("LVCMOS18")),
+    ("dip_sw", 4, Pins("AH17"), IOStandard("LVCMOS18")),
+    ("dip_sw", 5, Pins("AG17"), IOStandard("LVCMOS18")),
+    ("dip_sw", 6, Pins("AJ15"), IOStandard("LVCMOS18")),
+    ("dip_sw", 7, Pins("AJ16"), IOStandard("LVCMOS18")),
+
+    # PMOD headers, behind level shifters to 3.3 V. The XDC gives PMOD0_0 as
+    # POD12, which looks like a typo: every other PMOD line is LVCMOS12.
+    ("pmod0", 0, Pins("C17"), IOStandard("LVCMOS12")),
+    ("pmod0", 1, Pins("M18"), IOStandard("LVCMOS12")),
+    ("pmod0", 2, Pins("H16"), IOStandard("LVCMOS12")),
+    ("pmod0", 3, Pins("H17"), IOStandard("LVCMOS12")),
+    ("pmod0", 4, Pins("J16"), IOStandard("LVCMOS12")),
+    ("pmod0", 5, Pins("K16"), IOStandard("LVCMOS12")),
+    ("pmod0", 6, Pins("H15"), IOStandard("LVCMOS12")),
+    ("pmod0", 7, Pins("J15"), IOStandard("LVCMOS12")),
+
+    ("pmod1", 0, Pins("L14"), IOStandard("LVCMOS12")),
+    ("pmod1", 1, Pins("L15"), IOStandard("LVCMOS12")),
+    ("pmod1", 2, Pins("M13"), IOStandard("LVCMOS12")),
+    ("pmod1", 3, Pins("N13"), IOStandard("LVCMOS12")),
+    ("pmod1", 4, Pins("M15"), IOStandard("LVCMOS12")),
+    ("pmod1", 5, Pins("N15"), IOStandard("LVCMOS12")),
+    ("pmod1", 6, Pins("M14"), IOStandard("LVCMOS12")),
+    ("pmod1", 7, Pins("N14"), IOStandard("LVCMOS12")),
+
     # User-programmable SI570 oscillator; default ~300 MHz (Bank 69, VCC1V2)
     ("user_si570", 0,
      Subsignal("p", Pins("J19"), IOStandard("DIFF_POD12")),
